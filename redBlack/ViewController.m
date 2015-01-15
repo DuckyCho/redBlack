@@ -125,7 +125,7 @@
         [queue removeObjectIdenticalTo:[queue firstObject]];
         if(firstObj.color_int == RED_INT){
             if(firstObj.dad.color_int == RED_INT){
-                return NO;
+                    return NO;
             }
         }
         if(firstObj.left != nil){

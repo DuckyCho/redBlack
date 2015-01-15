@@ -28,9 +28,10 @@
     [self delete:node];
 }
 -(void)redrawEdge:(NSNotification *)noti{
-    for(int i = 0 ; i < _edges.count ; i ++){
-        [[_edges objectAtIndex:i]removeFromSuperview];
-        [_edges removeObjectAtIndex:i];
+    
+    while(_edges.count!=0){
+        [[_edges firstObject]removeFromSuperview];
+        [_edges removeObjectAtIndex:0];
     }
     if(root != nil)
         [self redrawAllEdge:root];
@@ -90,9 +91,9 @@
     BOOL isPosDoubled;
     NSMutableArray * queue = [[NSMutableArray alloc]init];
     Node * firstObj;
-    for(int i = 0 ; i < _edges.count ; i ++){
-        [[_edges objectAtIndex:i]removeFromSuperview];
-        [_edges removeObjectAtIndex:i];
+    while(_edges.count != 0){
+        [[_edges firstObject]removeFromSuperview];
+        [_edges removeObjectAtIndex:0];
     }
     [queue addObject:rootNode];
     
@@ -386,120 +387,174 @@
 }
 
 -(void)delete:(Node *)node{
-    NSUInteger erasedColor = node.color_int;
-    Node * fixupNode;
     Node * successor;
-   if(node.left == nil){
-        fixupNode = node.right;
-        [self transplant:node plantNode:node.right];
+    Node * successorL = node.left == nil ? node : [self treeMaximum:node.left];
+    Node * successorR = node.right == nil ? node : [self treeMinimum:node.right];
+    if(successorL.color_int == RED_INT)
+        successor = successorL;
+    else if(successorR.color_int == RED_INT)
+        successor = successorR;
+    else
+        successor = successorL;
+    
+    
+    
+    if(root == successor){
+        [root removeFromSuperview];
+        root = nil;
+        return;
     }
-    else if(node.right == nil){
-        fixupNode = node.left;
-        [self transplant:node plantNode:node.left];
+    else if (successor.color_int ==  RED_INT){
+        node.value = successor.value;
+        [node setTitle:successor.titleLabel.text forState:UIControlStateNormal];
+        if(successor.dad.right == successor)
+            successor.dad.right = nil;
+        else
+            successor.dad.left = nil;
+        successor.dad = nil;
+        [successor removeFromSuperview];
     }
     else{
-        successor = [self treeMinimum:node.right];
-        erasedColor = successor.color_int;
-        fixupNode = successor.right;
-        if(successor.dad == node)
-            fixupNode.dad = successor;
-        else{
-            [self transplant:successor plantNode:successor.right];
-            successor.right = node.right;
-            successor.right.dad = successor;
+        node.value = successor.value;
+        [node setTitle:successor.titleLabel.text forState:UIControlStateNormal];
+        if(successor.left == nil && successor.right == nil){
+            [self deleteSuccessor_step1:successor];
+            if(successor.dad.left == successor)
+                successor.dad.left = nil;
+            else
+                successor.dad.right = nil;
+            successor.dad = nil;
+            [successor removeFromSuperview];
         }
-        [self transplant:node plantNode:successor];
-        successor.left = node.left;
-        successor.left.dad = successor;
-        successor.color_int = node.color_int;
-        [successor setColor:node.color];
+        else{
+            if(successor.value < node.value){
+                successor.value = successor.left.value;
+                [successor.left removeFromSuperview];
+                successor.left.dad = nil;
+                successor.left = nil;
+                
+            }
+            else{
+                successor.value = successor.right.value;
+                [successor.right removeFromSuperview];
+                successor.right.dad = nil;
+                successor.right = nil;
+            }
+        }
     }
-    if(erasedColor == BLACK_INT){
-        [self deleteFixup:fixupNode];
-    }
-    node.dad = nil;
-    node.left = nil;
-    node.right = nil;
-    [node removeFromSuperview];
+    
     [self setRootNodePos];
     [self setAllNodePos:root];
     [[NSNotificationCenter defaultCenter]postNotificationName:@"redrawEdge" object:nil];
-    
 }
--(void)deleteFixup:(Node *)fixupNode{
-    while (fixupNode != root && fixupNode.color_int != BLACK_INT) {
-        if(fixupNode == fixupNode.dad.left){
-            Node * sibling = fixupNode.dad.right;
-            if(sibling.color_int == RED_INT){
-                sibling.color_int = BLACK_INT;
-                [sibling setColor:UIColorFromRGB(BLACK_HEX)];
-                fixupNode.dad.color_int = RED_INT;
-                [fixupNode.dad setColor:UIColorFromRGB(RED_HEX)];
-                [self leftRotate:self node:fixupNode.dad];
-                sibling = fixupNode.dad.right;
-            }
-            if(sibling.left.color_int == BLACK_INT && sibling.right.color_int == BLACK_INT){
-                sibling.color_int = RED_INT;
-                [sibling setColor:UIColorFromRGB(RED_HEX)];
-                fixupNode = fixupNode.dad;
-            }
-            else{
-                if(sibling.right.color_int == BLACK_INT){
-                    sibling.left.color_int = BLACK_INT;
-                    [sibling.left setColor:UIColorFromRGB(BLACK_HEX)];
-                    sibling.color_int = RED_INT;
-                    [sibling setColor:UIColorFromRGB(RED_HEX)];
-                    [self rightRotate:self node:sibling];
-                    sibling = fixupNode.dad.right;
-                }
-                sibling.color_int = fixupNode.dad.color_int;
-                [sibling setColor:fixupNode.dad.color];
-                fixupNode.dad.color_int = BLACK_INT;
-                [fixupNode setColor:UIColorFromRGB(BLACK_HEX)];
-                sibling.right.color_int = BLACK_INT;
-                [sibling.right setColor:UIColorFromRGB(BLACK_HEX)];
-                [self leftRotate:self node:fixupNode.dad];
-                fixupNode = root;
-            }
+
+-(Node *)getSibling:(Node *)node{
+    if(node.dad.left == node)
+        return node.dad.right;
+    else
+        return node.dad.left;
+
+}
+
+-(void)deleteSuccessor_step1:(Node *)node{
+    Node * sibling = [self getSibling:node];
+    if(sibling.color_int == RED_INT){
+        node.dad.color_int = RED_INT;
+        [node.dad setColor:UIColorFromRGB(RED_HEX)];
+        sibling.color_int = BLACK_INT;
+        [sibling setColor:UIColorFromRGB(BLACK_HEX)];
+        
+        if(node.dad.left == node){
+            [self leftRotate:self node:sibling.dad];
         }
         else{
-            Node * sibling = fixupNode.dad.left;
-            if(sibling.color_int == RED_INT){
-                sibling.color_int = BLACK_INT;
-                [sibling setColor:UIColorFromRGB(BLACK_HEX)];
-                fixupNode.dad.color_int = RED_INT;
-                [fixupNode.dad setColor:UIColorFromRGB(RED_HEX)];
-                [self rightRotate:self node:fixupNode.dad];
-                sibling = fixupNode.dad.left;
-            }
-            if(sibling.right.color_int == BLACK_INT && sibling.left.color_int == BLACK_INT){
-                sibling.color_int = RED_INT;
-                [sibling setColor:UIColorFromRGB(RED_HEX)];
-                fixupNode = fixupNode.dad;
+            [self rightRotate:self node:sibling.dad];
+        }
+    }
+    else{
+        [self deleteSuccessor_step2:node];
+    }
+}
+-(void)deleteSuccessor_step2:(Node *)node{
+    Node * sibling = [self getSibling:node];
+    if(node.dad.left ==node){
+        if(sibling.color_int == BLACK_INT && sibling.right.color_int == RED_INT && (sibling.left.color_int == RED_INT || sibling.left.color_int == BLACK_INT)){
+            sibling.color_int = sibling.dad.color_int;
+            [sibling setColor:sibling.dad.color];
+            sibling.dad.color_int = BLACK_INT;
+            [sibling.dad setColor:UIColorFromRGB(BLACK_HEX)];
+            sibling.right.color_int = BLACK_INT;
+            [sibling.right setColor:UIColorFromRGB(BLACK_HEX)];
+            [self leftRotate:self node:sibling.dad];
+            
+        }
+        else{
+            [self deleteSuccessor_step3:node];
+        }
+    }
+    else{
+        if(sibling.color_int == BLACK_INT && sibling.left.color_int == RED_INT && (sibling.right.color_int == RED_INT || sibling.right.color_int ==BLACK_INT)){
+                sibling.color_int = sibling.dad.color_int;
+                [sibling setColor:sibling.dad.color];
+                sibling.dad.color_int = BLACK_INT;
+                [sibling.dad setColor:UIColorFromRGB(BLACK_HEX)];
+                sibling.right.color = BLACK_INT;
+                [sibling.right setColor:UIColorFromRGB(BLACK_HEX)];
+                [self rightRotate:self node:sibling.dad];
             }
             else{
-                if(sibling.left.color_int == BLACK_INT){
-                    sibling.right.color_int = BLACK_INT;
-                    [sibling.right setColor:UIColorFromRGB(BLACK_HEX)];
-                    sibling.color_int = RED_INT;
-                    [sibling setColor:UIColorFromRGB(RED_HEX)];
-                    [self leftRotate:self node:sibling];
-                    sibling = fixupNode.dad.left;
-                }
-                sibling.color_int = fixupNode.dad.color_int;
-                [sibling setColor:fixupNode.dad.color];
-                fixupNode.dad.color_int = BLACK_INT;
-                [fixupNode.dad setColor:UIColorFromRGB(BLACK_HEX)];
-                sibling.left.color_int = BLACK_INT;
-                [sibling.left setColor:UIColorFromRGB(BLACK_HEX)];
-                [self rightRotate:self node:fixupNode.dad];
-                fixupNode = root;
+                [self deleteSuccessor_step3:node];
+            }
+    }
+}
+
+-(void)deleteSuccessor_step3:(Node *)node{
+    Node * sibling = [self getSibling:node];
+    if(node.dad.left == node){
+        if(sibling.color_int == BLACK_INT && sibling.left.color_int == RED_INT && sibling.right.color_int == BLACK_INT){
+            sibling.left.color_int = BLACK_INT;
+            [sibling.left setColor:UIColorFromRGB(BLACK_HEX)];
+            sibling.color_int = RED_INT;
+            [sibling setColor:UIColorFromRGB(RED_HEX)];
+            [self rightRotate:self node:sibling.dad];
+            [self deleteSuccessor_step2:node];
+        }
+        else{
+            [self deleteSuccessor_step4:node];
+        }
+    }
+    else{
+        if(sibling.color_int == BLACK_INT && sibling.right.color_int == RED_INT && sibling.left.color_int == BLACK_INT){
+            sibling.right.color_int = BLACK_INT;
+            [sibling.right setColor:UIColorFromRGB(BLACK_HEX)];
+            sibling.color_int = RED_INT;
+            [sibling setColor:UIColorFromRGB(RED_HEX)];
+            [self leftRotate:self node:sibling.dad];
+            [self deleteSuccessor_step2:node];
+        }
+        else{
+            [self deleteSuccessor_step4:node];
+        }
+    }
+}
+
+-(void)deleteSuccessor_step4:(Node *)node{
+    Node * sibling = [self getSibling:node];
+    if(sibling.color_int ==BLACK_INT && sibling.left.color_int ==BLACK_INT && sibling.right.color_int ==BLACK_INT){
+        sibling.color_int = RED_INT;
+        [sibling setColor:UIColorFromRGB(RED_HEX)];
+        if(sibling.dad.color_int == RED_INT){
+            sibling.dad.color_int = BLACK_INT;
+            [sibling.dad setColor:UIColorFromRGB(BLACK_HEX)];
+        }
+        else{
+            if(root != sibling.dad){
+                [self deleteSuccessor_step1:sibling.dad];
             }
         }
     }
-    fixupNode.color_int = BLACK_INT;
-    [fixupNode setColor:UIColorFromRGB(BLACK_HEX)];
 }
+
 
 -(Node *)treeMinimum:(Node *)node{
     Node * tmp = node;
