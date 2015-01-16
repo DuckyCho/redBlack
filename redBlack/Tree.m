@@ -399,6 +399,18 @@
     
     
     
+    ///successor를 선출하여 삭제할 node 를 successor로 대치시킬 때 발생하는 경우의 수
+    ///00. successor가 red일 경우 : 삭제할 node를 successor로 대치시키고 delete end
+    
+    ///01. successor가 black일 경우
+    ///01-0.successor의 자식이 없을 경우 : deleteStep 진행
+    ///01-1.successor의 자식이 있을 경우 : successor를 successor의 자식으로 대치시키고 successor의 자식의 색을 successor로 바꾼 후 delete end
+    
+    
+    ///c.f. 예외case : successor가 root일 경우 : free(root)
+    
+    //c.f. successor가 root인경우 : 트리에 root노드 단 하나만 존재하는 경우, root를 free, delete끝
+    
     if(root == successor){
         [root removeFromSuperview];
         root = nil;
@@ -555,6 +567,118 @@
     }
 }
 
+//
+//-(void)delete:(Node *)node{
+//    Node * tmp = node;
+//    int originalColor = tmp.color_int;
+//    Node * x;
+//    if (node.left == nil) {
+//        x = node.right;
+//        [self transplant:node plantNode:node.right];
+//    }
+//    else if (node.right == nil) {
+//        x = node.left;
+//        [self transplant:node plantNode:node.left];
+//    }
+//    else{
+//        tmp = [self treeMinimum:node.right];
+//        originalColor = tmp.color_int;
+//        x = tmp.right;
+//        if (tmp.dad == node) {
+//            x.dad = tmp;
+//        }
+//        else{
+//            [self transplant:tmp plantNode:tmp.right];
+//            tmp.right = node.right;
+//            tmp.right.dad = tmp;
+//        }
+//        [self transplant:node plantNode:tmp];
+//        tmp.left = node.left;
+//        tmp.left.dad = tmp;
+//        tmp.color_int = node.color_int;
+//        [tmp setColor:node.color];
+//    }
+//    if(originalColor == BLACK_INT){
+//        [self deleteFixUp:x];
+//    }
+//
+//}
+//
+//-(void)deleteFixUp:(Node *)x{
+//    Node * w;
+//    while (x != root && x.color_int == BLACK_INT) {
+//        if(x == x.dad.left){
+//            w = x.dad.right;
+//            if(w.color_int == RED_INT){
+//                w.color_int = BLACK_INT;
+//                [w setColor:UIColorFromRGB(BLACK_HEX)];
+//                x.dad.color_int = RED_INT;
+//                [x.dad setColor:UIColorFromRGB(RED_HEX)];
+//                [self leftRotate:self node:x.dad];
+//                w = x.dad.right;
+//            }
+//            if(w.left.color_int == BLACK_INT && w.right.color_int == BLACK_INT){
+//                w.color_int = RED_INT;
+//                [w setColor:UIColorFromRGB(RED_HEX)];
+//                x = x.dad;
+//            }
+//            else{
+//                if(w.right.color_int == BLACK_INT){
+//                    w.left.color_int = BLACK_INT;
+//                    [w.left setColor:UIColorFromRGB(BLACK_HEX)];
+//                    w.color_int = RED_INT;
+//                    [w setColor:UIColorFromRGB(RED_HEX)];
+//                    [self rightRotate:self node:w];
+//                    w = x.dad.right;
+//                }
+//                w.color_int = x.dad.color_int;
+//                [w setColor:x.dad.color];
+//                x.dad.color_int = BLACK_INT;
+//                [x.dad setColor:UIColorFromRGB(BLACK_HEX)];
+//                w.right.color_int = BLACK_INT;
+//                [w.right setColor:UIColorFromRGB(BLACK_HEX)];
+//                [self leftRotate:self node:x.dad];
+//                x = root;
+//            }
+//        }
+//        else{
+//            w = x.dad.left;
+//            if(w.color_int == RED_INT){
+//                w.color_int = BLACK_INT;
+//                [w setColor:UIColorFromRGB(BLACK_HEX)];
+//                x.dad.color_int = RED_INT;
+//                [x.dad setColor:UIColorFromRGB(RED_HEX)];
+//                [self rightRotate:self node:x.dad];
+//                w = x.dad.left;
+//            }
+//            if(w.right.color_int == BLACK_INT && w.left.color_int == BLACK_INT){
+//                w.color_int = RED_INT;
+//                [w setColor:UIColorFromRGB(RED_HEX)];
+//                x = x.dad;
+//            }
+//            else{
+//                if(w.left.color_int == BLACK_INT){
+//                    w.right.color_int = BLACK_INT;
+//                    [w.right setColor:UIColorFromRGB(BLACK_HEX)];
+//                    w.color_int = RED_INT;
+//                    [w setColor:UIColorFromRGB(RED_HEX)];
+//                    [self leftRotate:self node:w];
+//                    w = x.dad.left;
+//                }
+//                w.color_int = x.dad.color_int;
+//                [w setColor:x.dad.color];
+//                x.dad.color_int = BLACK_INT;
+//                [x.dad setColor:UIColorFromRGB(BLACK_HEX)];
+//                w.right.color_int = BLACK_INT;
+//                [w.right setColor:UIColorFromRGB(BLACK_HEX)];
+//                [self rightRotate:self node:x.dad];
+//                x = root;
+//            }
+//        }
+//    }
+//    x.color_int = BLACK_INT;
+//    [x setColor:UIColorFromRGB(BLACK_HEX)];
+//}
 
 -(Node *)treeMinimum:(Node *)node{
     Node * tmp = node;
